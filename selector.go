@@ -27,9 +27,9 @@ type Selector struct {
 }
 
 type Title struct {
-	Value            string // The raw string for the title of the selector
-	TitleFgColor     int    // Enumerated color for the entire title foreground
-	TitleBgColor     int    // Enumerated color for the entire title background
+	Value        string // The raw string for the title of the selector
+	TitleFgColor int    // Enumerated color for the entire title foreground
+	TitleBgColor int    // Enumerated color for the entire title background
 }
 
 // Option is a single option in the selector. Each option can
@@ -274,15 +274,16 @@ func (s *Selector) anistep() {
 // animated screen.
 func (s *Selector) writeScreen() {
 	var buffer string
+	i := 0
 	if s.Title != nil {
 		// We have a title, let's build the buffer and flush it
 		// Title buffer - use 1024, as we should never have that many options
 		// ------------------------------------------------------------------
-		InitPair(1, s.Title.TitleFgColor, s.Title.TitleBgColor)
-		ColorPairOn(1)
+		InitPair(i, s.Title.TitleFgColor, s.Title.TitleBgColor)
+		ColorPairOn(i)
 		buffer = buffer + s.Title.Value
 		AddStr(buffer)
-		ColorPairOff(1)
+		ColorPairOff(i)
 		buffer = ""
 		// ------------------------------------------------------------------
 	}
@@ -298,29 +299,32 @@ func (s *Selector) writeScreen() {
 			// 1. The label
 			// 2. The cursor
 			// ------------------------------------------------------------------
-			InitPair(2, opt.OptionFgColor, opt.OptionBgColor)
+			i++
+			InitPair(i, opt.OptionFgColor, opt.OptionBgColor)
 			buffer = buffer + opt.Label + lolSpace
-			ColorPairOn(2)
+			ColorPairOn(i)
 			AddStr(buffer)
-			ColorPairOff(2)
+			ColorPairOff(i)
 			buffer = ""
 			// ------------------------------------------------------------------
-			InitPair(3, s.Cursor.CursorFgColor, s.Cursor.CursorBgColor)
+			i++
+			InitPair(i, s.Cursor.CursorFgColor, s.Cursor.CursorBgColor)
 			buffer = s.Cursor.Steps[s.Cursor.i].Value // This is the cursor
-			ColorPairOn(3)
+			ColorPairOn(i)
 			AddStr(buffer)
-			ColorPairOff(3)
+			ColorPairOff(i)
 			buffer = ""
 			// ------------------------------------------------------------------
 		} else {
 			// Just a plain old line
 			// Write a single buffer for the line
 			// ------------------------------------------------------------------
-			InitPair(4, opt.OptionFgColor, opt.OptionBgColor)
+			i++
+			InitPair(i, opt.OptionFgColor, opt.OptionBgColor)
 			buffer = buffer + opt.Label
-			ColorPairOn(4)
+			ColorPairOn(i)
 			AddStr(buffer)
-			ColorPairOff(4)
+			ColorPairOff(i)
 			buffer = ""
 			// ------------------------------------------------------------------
 		}

@@ -27,6 +27,12 @@ func main() {
 	selector.NewAddOption("2nd Choice", &Choice{Value: "The 2nd choice wins"})
 	selector.NewAddOption("Third Choice", &Choice{Value: "The last choice wins"})
 
+	// Demonstrate custom options with a default option
+	defaultOption := grill.NewOption("I don't know", -1)
+	defaultOption.OptionFgColor = grill.COLOR_RED
+	selector.AddOption(defaultOption)
+
+
 
 	// Define a custom cursor here
 	// You can have as many steps as you want
@@ -35,7 +41,7 @@ func main() {
 	cursor.NewAddStep("<[/]")
 	cursor.NewAddStep("<[-]")
 	cursor.NewAddStep("<[\\]")
-	cursor.CursorFgColor = grill.COLOR_BLUE
+	cursor.CursorFgColor = grill.COLOR_MAGENTA
 
 
 	// Drop in our cursor
