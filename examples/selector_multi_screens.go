@@ -56,7 +56,7 @@ func mainScreen() *grill.Selector {
 	selector.NewAddOption("Window$", "Blue Screen of Death!")
 
 	// Add a title to the program
-	selector.Title = `
+	selector.Title.Value = `
 -----------------------------------
              OS Selector
 -----------------------------------
@@ -76,7 +76,7 @@ func linuxScreen(mainScreen *grill.Selector) *grill.Selector {
 	selector.NewAddOption("Mascot", "Tux")
 
 	// Add a title to the program
-	selector.Title = `
+	selector.Title.Value = `
 -----------------------------------
              Linux
 -----------------------------------
@@ -96,7 +96,7 @@ func bsdScreen(mainScreen *grill.Selector) *grill.Selector {
 	selector.NewAddOption("Mascot", "Beastie")
 
 	// Add a title to the program
-	selector.Title = `
+	selector.Title.Value = `
 -----------------------------------
                 BSD
 -----------------------------------

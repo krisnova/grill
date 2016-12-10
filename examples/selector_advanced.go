@@ -16,6 +16,8 @@ func main() {
 	// Add a title to the program
 	titleStr := "Please make a selection from our wonderful options below.."
 	title := grill.NewTitle(titleStr)
+	title.TitleFgColor = grill.COLOR_WHITE
+	title.TitleBgColor = grill.COLOR_BLACK
 	selector.AddTitle(title)
 
 	// Here we demonstrate that the implementation can use whatever they want for the value
@@ -29,8 +31,11 @@ func main() {
 	// Define a custom cursor here
 	// You can have as many steps as you want
 	cursor := grill.NewCursor()
-	cursor.NewAddStep("<[*]")
-	cursor.NewAddStep("<[ ]")
+	cursor.NewAddStep("<[|]")
+	cursor.NewAddStep("<[/]")
+	cursor.NewAddStep("<[-]")
+	cursor.NewAddStep("<[\\]")
+	cursor.CursorFgColor = grill.COLOR_BLUE
 
 
 	// Drop in our cursor
