@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 )
 
 // Selector represents a selector to the implementor
@@ -22,7 +23,13 @@ type Selector struct {
 	Options            []*Option // List of options
 	Cursor             *Cursor   // The animated cursor to use
 	StepMilli          int       // Time for each animation step in milliseconds
-	Title              string    // The title of program, this is displayed once on ncurses initialization
+	Title              *Title    // The title of program, this is displayed once on ncurses initialization
+}
+
+type Title struct {
+	Value            string // The raw string for the title of the selector
+	TitleFgColor     int    // Enumerated color for the entire title foreground
+	TitleBgColor     int    // Enumerated color for the entire title background
 }
 
 // Option is a single option in the selector. Each option can
@@ -33,17 +40,21 @@ type Selector struct {
 // Selector{} 's are made up of options. These are what the user actually
 // can pick from.
 type Option struct {
-	Selected bool
-	Label    string
-	Value    interface{}
+	Selected      bool
+	Label         string
+	Value         interface{}
+	OptionFgColor int // Enumerated color for the entire option label foreground
+	OptionBgColor int // Enumerated color for the entire option label background
 }
 
 // A list of string values to use for the *Cursor{}
 // Each of the Steps will be displayed on the screen for 1 step before changing
 // Steps will repeat forever
 type Cursor struct {
-	i     int
-	Steps []*CursorStep
+	i             int
+	Steps         []*CursorStep
+	CursorFgColor int
+	CursorBgColor int
 }
 
 // A single step in the *Cursor{}, usually just a single character
@@ -59,11 +70,29 @@ func NewSelector() *Selector {
 	return s
 }
 
+// Will create a new *Cursor{}
+func NewCursor() *Cursor {
+	return &Cursor{CursorFgColor: COLOR_BLUE, CursorBgColor: COLOR_BLACK}
+}
+
 // NewOption will return a new Option{} for the implementation to interact with.
 // All constructor logic shold go here for Option{} 's
 func NewOption(label string, value interface{}) *Option {
-	o := &Option{Label: label, Value: value}
+	o := &Option{Label: label, Value: value, OptionFgColor: COLOR_GREEN, OptionBgColor: COLOR_BLACK}
 	return o
+}
+
+// Will create a new *CursorStep{} to be used in a *Cursor{}
+func NewCursorStep(val string) *CursorStep {
+	return &CursorStep{Value: val}
+}
+
+// Will create a new *Title{} to be used with a *Selector{}
+func NewTitle(val string) *Title {
+	if strings.Count(val, "\n") < 1 {
+		val = val + "\n"
+	}
+	return &Title{Value: val, TitleFgColor: COLOR_GREEN, TitleBgColor: COLOR_BLACK}
 }
 
 // Basic default cursor, just implements a spinning line for the cursor
@@ -76,6 +105,27 @@ func NewDefaultCursor() *Cursor {
 	c.Steps = append(c.Steps, &CursorStep{Value: "<--[-]" })
 	c.Steps = append(c.Steps, &CursorStep{Value: "<--[\\]" })
 	return c
+}
+
+// Will add a *CursorStep{} to a *Cursor{}
+func (c *Cursor) AddStep(step *CursorStep) {
+	c.Steps = append(c.Steps, step)
+}
+
+// Will create a new *CursorStep{} from a value, and add it to the *Cursor{}
+func (c *Cursor) NewAddStep(val string) {
+	step := NewCursorStep(val)
+	c.AddStep(step)
+}
+
+// Will add a *Cursor{} to a *Selector{}
+func (s *Selector) AddCursor(c *Cursor) {
+	s.Cursor = c
+}
+
+// Will add a *Title{} to a *Selector{}
+func (s *Selector) AddTitle(t *Title) {
+	s.Title = t
 }
 
 // AddOption will append() an *Option{} to the Selector{}
@@ -106,11 +156,12 @@ func (s *Selector) NewAddOption(label string, value interface{}) {
 // When Render() is called, if the user hasn't defined a *Cursor{}, the default *Cursor{} will be chosen
 // When Render() is called, we can do some basic algebra to make the buffer calculation cleaner later, so
 // we calculate things like longest option label for instance.
+//
 func (s *Selector) Render() error {
+	// Check for default cursor
 	if s.Cursor == nil {
 		s.Cursor = NewDefaultCursor()
 	}
-	s.buffer = s.Title
 
 	// Calculate longest option label
 	lol := -1 // I couldn't help it..
@@ -121,7 +172,10 @@ func (s *Selector) Render() error {
 	}
 	s.longestOptionLabel = lol
 
+	// Init ncurses
 	InitSelectorCurses(s.StepMilli)
+
+	// Validate we have enough screen real estate
 	maxCols := W.MaxX
 	if (s.longestOptionLabel - 2) >= maxCols {
 		End()
@@ -133,11 +187,16 @@ func (s *Selector) Render() error {
 		return fmt.Errorf("Unable to render selector. Terminal not high enough! %d %d", len(s.Options), maxRows)
 	}
 
+	// Implement signal handler
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt)
 
-	// Here we take our existing buffer and use that as our buffer foundation, we want this to appear seamless
+	// Init the buffer right away
+	s.writeScreen()
 
+	// Here we take our existing buffer and use that as our buffer foundation, we want this to appear seamless
+	// TODO Kris here
+	// This is where we need scr_dump or something..
 
 	for {
 		select {
@@ -191,10 +250,9 @@ func (s *Selector) handleChar(i int) (bool) {
 
 // Run this every step.. will refresh our screen to make the screen appear alive, and reactive
 func (s *Selector) refresh() {
-	s.anistep()
+	s.anistep()       // Increment our next animation step
 	Clear()           // Erase the screen
-	s.calcBuffer()        // Calculate the buffer
-	AddStr(s.buffer)  // Write the new buffer out
+	s.writeScreen()    // Calculate the buffer
 }
 
 // anistep (or animate step) is the logic that will be ran every step
@@ -202,8 +260,8 @@ func (s *Selector) refresh() {
 // when the buffer is calculated, we should automatically have the correct
 // cursor step.
 func (s *Selector) anistep() {
-	l := len(s.Cursor.Steps) // Default 4
-	maxIndex := (l - 1)      // Default 3
+	l := len(s.Cursor.Steps) //  N
+	maxIndex := (l - 1)      // (N - 1)
 	if s.Cursor.i == maxIndex {
 		s.Cursor.i = 0
 	} else {
@@ -211,16 +269,24 @@ func (s *Selector) anistep() {
 	}
 }
 
-// calcBuffer will calculate the new buffer for the screen to write
-// The data calculated here will be stored in the selector, to be written out
-// to ncurses later.
-//
-// This is where all the math-y things happen for the package. Basically we
-// have to programmatically process the entire screen for every animated step
-// we bring to life.
-func (s *Selector) calcBuffer() {
+// writeScreen will flush a series of buffers out. Basically this function can be called
+// on an empty screen, and we can trust that it will write the next screen needed for our
+// animated screen.
+func (s *Selector) writeScreen() {
 	var buffer string
-	buffer = buffer + s.Title // Always add our title
+	if s.Title != nil {
+		// We have a title, let's build the buffer and flush it
+		// Title buffer - use 1024, as we should never have that many options
+		// ------------------------------------------------------------------
+		InitPair(1, s.Title.TitleFgColor, s.Title.TitleBgColor)
+		ColorPairOn(1)
+		buffer = buffer + s.Title.Value
+		AddStr(buffer)
+		ColorPairOff(1)
+		buffer = ""
+		// ------------------------------------------------------------------
+	}
+
 	for id, opt := range s.Options {
 		lolDelta := (s.longestOptionLabel - len(opt.Label)) + 2 // Longest plus 2 because space is good
 		var lolSpace string
@@ -228,16 +294,38 @@ func (s *Selector) calcBuffer() {
 			lolSpace = lolSpace + " "
 		}
 		if s.i == id {
-			// Line with the cursor
-			buffer = buffer + opt.Label + lolSpace + s.Cursor.Steps[s.Cursor.i].Value + "\n"
+			// Line with the cursor - we have 2 buffers here
+			// 1. The label
+			// 2. The cursor
+			// ------------------------------------------------------------------
+			InitPair(2, opt.OptionFgColor, opt.OptionBgColor)
+			buffer = buffer + opt.Label + lolSpace
+			ColorPairOn(2)
+			AddStr(buffer)
+			ColorPairOff(2)
+			buffer = ""
+			// ------------------------------------------------------------------
+			InitPair(3, s.Cursor.CursorFgColor, s.Cursor.CursorBgColor)
+			buffer = s.Cursor.Steps[s.Cursor.i].Value // This is the cursor
+			ColorPairOn(3)
+			AddStr(buffer)
+			ColorPairOff(3)
+			buffer = ""
+			// ------------------------------------------------------------------
 		} else {
 			// Just a plain old line
-			buffer = buffer + opt.Label + "\n"
+			// Write a single buffer for the line
+			// ------------------------------------------------------------------
+			InitPair(4, opt.OptionFgColor, opt.OptionBgColor)
+			buffer = buffer + opt.Label
+			ColorPairOn(4)
+			AddStr(buffer)
+			ColorPairOff(4)
+			buffer = ""
+			// ------------------------------------------------------------------
 		}
+		AddStr("\n")
 	}
-
-	// Clobber the buffer every time
-	s.buffer = buffer
 }
 
 // Sig handler during the selector, most people will ctl^C when they freak out.

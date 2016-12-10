@@ -10,36 +10,39 @@ type Choice struct {
 }
 
 func main() {
+	// Start a new selector
 	selector := grill.NewSelector()
+
+	// Add a title to the program
+	titleStr := "Please make a selection from our wonderful options below.."
+	title := grill.NewTitle(titleStr)
+	selector.AddTitle(title)
 
 	// Here we demonstrate that the implementation can use whatever they want for the value
 	// So feel free to define types, and use them in the choices to make your life easier!
+	// You can use *anything* for the second argument here, and get it back later
 	selector.NewAddOption("First Choice", &Choice{Value: "The First choice wins"})
 	selector.NewAddOption("2nd Choice", &Choice{Value: "The 2nd choice wins"})
 	selector.NewAddOption("Third Choice", &Choice{Value: "The last choice wins"})
 
-	// Add a title to the program
-	selector.Title = `
------------------------------------
-Please make a choice! If you dare!
------------------------------------
-`
 
 	// Define a custom cursor here
 	// You can have as many steps as you want
-	cursor := &grill.Cursor{}
-	cursor.Steps = append(cursor.Steps, &grill.CursorStep{Value: "<-- *" })
-	cursor.Steps = append(cursor.Steps, &grill.CursorStep{Value: "<--  " })
-	cursor.Steps = append(cursor.Steps, &grill.CursorStep{Value: "<-- ." })
-	cursor.Steps = append(cursor.Steps, &grill.CursorStep{Value: "<--  " })
+	cursor := grill.NewCursor()
+	cursor.NewAddStep("<[*]")
+	cursor.NewAddStep("<[ ]")
+
 
 	// Drop in our cursor
-	selector.Cursor = cursor
+	selector.AddCursor(cursor)
 
-	// Turn the speed down, it defaults to 100
+	// Configure the step speed. Every step, is when the buffer will re-write itself
+	// so we can define any arbitrary number we want here. These are configured in
+	// milliseconds, and the default value is 100 milliseconds. In this case, let's
+	// use 200 to slow it down a bit.
 	selector.StepMilli = 200
 
-	// Render the menu
+	// Render the menu on the user's screen
 	err := selector.Render()
 	if err != nil {
 		panic(err)

@@ -38,6 +38,7 @@ func InitSelectorCurses(stepMilli int) {
 	C.cbreak()                    // Let's read those control characters in like the others
 	C.noecho()                    // Don't echo chars while reading
 	C.c_timeout(C.int(stepMilli)) // Timeout our Getch() for every 100milli, so we can animate the screen
+	C.start_color()               // Turn on colors - because fabulous
 
 	// Build the terminal size
 	W.MaxX = int(C.COLS)
@@ -63,6 +64,45 @@ func AddStr(str ...interface{}) {
 	res := (*C.char)(C.CString(fmt.Sprint(str...)))
 	defer C.free(unsafe.Pointer(res))
 	C.addstr(res)
+}
+
+// Ncurses Color Codes
+const (
+	COLOR_BLACK = 0
+	COLOR_RED = 1
+	COLOR_GREEN = 2
+	COLOR_YELLOW = 3
+	COLOR_BLUE = 4
+	COLOR_MAGENTA = 5
+	COLOR_CYAN = 6
+	COLOR_WHITE = 7
+)
+
+// attrn - The identifier of this attribute
+// fg - the foreground color from the list above
+// bg - the background color from the list above
+func InitPair(attrn, fg, bg int) {
+	C.init_pair(C.short(attrn), C.short(fg), C.short(bg))
+}
+
+// Will turn a color pair attribute on
+func ColorPairOn(id int) {
+	C.attron(C.COLOR_PAIR(C.int(id)))
+}
+
+// Will turn a color pair attribute off
+func ColorPairOff(id int) {
+	C.attroff(C.COLOR_PAIR(C.int(id)))
+}
+
+// Enable attribute
+func Attron(attr int) {
+	C.attron(C.int(attr))
+}
+
+// Disable attribute
+func Attroff(attr int) {
+	C.attroff(C.int(attr))
 }
 
 //func ScrDump() string {
