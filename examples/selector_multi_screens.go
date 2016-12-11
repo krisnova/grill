@@ -20,12 +20,9 @@ func main() {
 
 func processScreen(screen *grill.Selector) (*grill.Option, error) {
 
-	// clear selection from selector/screen
-	// TODO: Maybe this should be method in grill.Selector
-	// like ClearSelection or something
-	for _, option := range screen.Options {
-		option.Selected = false
-	}
+	// clear screen selections so we can reuse it
+	screen.ClearSelectedOption()
+
 
 	// Render the menu
 	err := screen.Render()

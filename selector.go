@@ -358,6 +358,14 @@ func (s *Selector) GetSelectedOption() (*Option, error) {
 	return so, nil
 }
 
+// ClearSelectedOption clears any options previously made
+func (s *Selector) ClearSelectedOption() {
+	for _, option := range s.Options {
+		option.Selected = false
+	}
+}
+
+
 // Wrapper function to get the option label
 func (o *Option) GetLabel() (string) {
 	return o.Label
