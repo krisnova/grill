@@ -10,7 +10,7 @@ func main() {
 	mainScreen := mainScreen()
 
 	// Get the option the user selected
-	option, err := processScreen(mainScreen)
+	option, err := renderScreen(mainScreen)
 	if err != nil {
 		panic(err)
 	}
@@ -18,7 +18,7 @@ func main() {
 	fmt.Println(option.Label, i)
 }
 
-func processScreen(screen *grill.Selector) (*grill.Option, error) {
+func renderScreen(screen *grill.Selector) (*grill.Option, error) {
 
 	// clear selection from selector/screen
 	// TODO: Maybe this should be method in grill.Selector
@@ -40,7 +40,7 @@ func processScreen(screen *grill.Selector) (*grill.Option, error) {
 	}
 	nextScreen, ok := option.GetValInterface().(*grill.Selector)
 	if ok {
-		option, err = processScreen(nextScreen)
+		option, err = renderScreen(nextScreen)
 	}
 
 	return option, err
@@ -51,16 +51,30 @@ func mainScreen() *grill.Selector {
 
 	selector := grill.NewSelector()
 
+	title := grill.NewTitle(`
+-----------------------------------
+             OS Selector
+-----------------------------------
+`)
+	title.TitleFgColor = grill.COLOR_WHITE
+	title.TitleBgColor = grill.COLOR_BLACK
+	selector.AddTitle(title)
+
 	selector.NewAddOption("Linux", linuxScreen(selector))
 	selector.NewAddOption("BSD", bsdScreen(selector))
 	selector.NewAddOption("Window$", "Blue Screen of Death!")
 
-	// Add a title to the program
-	selector.Title.Value = `
------------------------------------
-             OS Selector
------------------------------------
-`
+	// Define a custom cursor here
+	// You can have as many steps as you want
+	cursor := grill.NewCursor()
+	cursor.NewAddStep("<[|]")
+	cursor.NewAddStep("<[/]")
+	cursor.NewAddStep("<[-]")
+	cursor.NewAddStep("<[\\]")
+	cursor.CursorFgColor = grill.COLOR_WHITE
+
+	// Drop in our cursor
+	selector.AddCursor(cursor)
 
 	// Turn the speed down, it defaults to 100
 	selector.StepMilli = 200
@@ -72,15 +86,29 @@ func linuxScreen(mainScreen *grill.Selector) *grill.Selector {
 
 	selector := grill.NewSelector()
 
-	selector.NewAddOption("OS Selector", mainScreen)
-	selector.NewAddOption("Mascot", "Tux")
-
-	// Add a title to the program
-	selector.Title.Value = `
+	title := grill.NewTitle(`
 -----------------------------------
              Linux
 -----------------------------------
-`
+`)
+	title.TitleFgColor = grill.COLOR_WHITE
+	title.TitleBgColor = grill.COLOR_BLACK
+	selector.AddTitle(title)
+
+	selector.NewAddOption("<-OS Selector", mainScreen)
+	selector.NewAddOption("Mascot", "Tux")
+
+	// Define a custom cursor here
+	// You can have as many steps as you want
+	cursor := grill.NewCursor()
+	cursor.NewAddStep("<[|]")
+	cursor.NewAddStep("<[/]")
+	cursor.NewAddStep("<[-]")
+	cursor.NewAddStep("<[\\]")
+	cursor.CursorFgColor = grill.COLOR_MAGENTA
+
+	// Drop in our cursor
+	selector.AddCursor(cursor)
 
 	// Turn the speed down, it defaults to 100
 	selector.StepMilli = 200
@@ -92,15 +120,29 @@ func bsdScreen(mainScreen *grill.Selector) *grill.Selector {
 
 	selector := grill.NewSelector()
 
-	selector.NewAddOption("OS Selector", mainScreen)
-	selector.NewAddOption("Mascot", "Beastie")
-
-	// Add a title to the program
-	selector.Title.Value = `
+	title := grill.NewTitle(`
 -----------------------------------
                 BSD
 -----------------------------------
-`
+`)
+	title.TitleFgColor = grill.COLOR_WHITE
+	title.TitleBgColor = grill.COLOR_BLACK
+	selector.AddTitle(title)
+
+	selector.NewAddOption("<-OS Selector", mainScreen)
+	selector.NewAddOption("Mascot", "Beastie")
+
+	// Define a custom cursor here
+	// You can have as many steps as you want
+	cursor := grill.NewCursor()
+	cursor.NewAddStep("<[|]")
+	cursor.NewAddStep("<[/]")
+	cursor.NewAddStep("<[-]")
+	cursor.NewAddStep("<[\\]")
+	cursor.CursorFgColor = grill.COLOR_RED
+
+	// Drop in our cursor
+	selector.AddCursor(cursor)
 
 	// Turn the speed down, it defaults to 100
 	selector.StepMilli = 200
