@@ -14,16 +14,16 @@ import (
 // Each Selector has a list of *Option{} 's that are the things
 // the user can pick from
 type Selector struct {
-				     // Internal
-	i                  int       // The index the user is currently selecting
-	buffer             string    // The next buffer to write as a string
-	longestOptionLabel int       // The length of the longest option label at time of Render()
+	// Internal
+	i                  int    // The index the user is currently selecting
+	buffer             string // The next buffer to write as a string
+	longestOptionLabel int    // The length of the longest option label at time of Render()
 
-				     // Exported
-	Options            []*Option // List of options
-	Cursor             *Cursor   // The animated cursor to use
-	StepMilli          int       // Time for each animation step in milliseconds
-	Title              *Title    // The title of program, this is displayed once on ncurses initialization
+	// Exported
+	Options   []*Option // List of options
+	Cursor    *Cursor   // The animated cursor to use
+	StepMilli int       // Time for each animation step in milliseconds
+	Title     *Title    // The title of program, this is displayed once on ncurses initialization
 }
 
 type Title struct {
@@ -100,10 +100,10 @@ func NewDefaultCursor() *Cursor {
 	c := &Cursor{}
 
 	// Cute text cursor - thanks beastie ;)
-	c.Steps = append(c.Steps, &CursorStep{Value: "<--[|]" })
-	c.Steps = append(c.Steps, &CursorStep{Value: "<--[/]" })
-	c.Steps = append(c.Steps, &CursorStep{Value: "<--[-]" })
-	c.Steps = append(c.Steps, &CursorStep{Value: "<--[\\]" })
+	c.Steps = append(c.Steps, &CursorStep{Value: "<--[|]"})
+	c.Steps = append(c.Steps, &CursorStep{Value: "<--[/]"})
+	c.Steps = append(c.Steps, &CursorStep{Value: "<--[-]"})
+	c.Steps = append(c.Steps, &CursorStep{Value: "<--[\\]"})
 	return c
 }
 
@@ -179,7 +179,7 @@ func (s *Selector) Render() error {
 	maxCols := W.MaxX
 	if (s.longestOptionLabel - 2) >= maxCols {
 		End()
-		return fmt.Errorf("Unable to render selector. Terminal not wide enough! %d %d", s.longestOptionLabel - 2, maxCols)
+		return fmt.Errorf("Unable to render selector. Terminal not wide enough! %d %d", s.longestOptionLabel-2, maxCols)
 	}
 	maxRows := W.MaxY
 	if len(s.Options) > maxRows {
@@ -217,24 +217,24 @@ func (s *Selector) Render() error {
 
 // This takes an ascii representation integer, and manages it for our functionality
 // in the selector
-func (s *Selector) handleChar(i int) (bool) {
+func (s *Selector) handleChar(i int) bool {
 	l := len(s.Options) //  N
 	maxIndex := (l - 1) // (N - 1)
 
 	switch i {
 	case -1: //
 		return false
-	case 10 : //[enter]
+	case 10: //[enter]
 		s.Options[s.i].Selected = true // Select this option
 		return true
-	case 66 : //[down]
+	case 66: //[down]
 		if s.i == maxIndex {
 			// Do nothing
 		} else {
 			s.i = s.i + 1 // Reverse logic here
 		}
 		return false
-	case 65 : //[up]
+	case 65: //[up]
 		if s.i == 0 {
 			// Do nothing
 		} else {
@@ -250,9 +250,9 @@ func (s *Selector) handleChar(i int) (bool) {
 
 // Run this every step.. will refresh our screen to make the screen appear alive, and reactive
 func (s *Selector) refresh() {
-	s.anistep()       // Increment our next animation step
-	Clear()           // Erase the screen
-	s.writeScreen()    // Calculate the buffer
+	s.anistep()     // Increment our next animation step
+	Clear()         // Erase the screen
+	s.writeScreen() // Calculate the buffer
 }
 
 // anistep (or animate step) is the logic that will be ran every step
@@ -358,8 +358,15 @@ func (s *Selector) GetSelectedOption() (*Option, error) {
 	return so, nil
 }
 
+// ClearSelectedOption clears any options previously selected
+func (s *Selector) ClearSelectedOption() {
+	for _, option := range s.Options {
+		option.Selected = false
+	}
+}
+
 // Wrapper function to get the option label
-func (o *Option) GetLabel() (string) {
+func (o *Option) GetLabel() string {
 	return o.Label
 }
 
@@ -385,8 +392,6 @@ func (o *Option) GetValString() (string, error) {
 }
 
 // Convenience function to get the value exactly as it was passed in
-func (o *Option) GetValInterface() (interface{}) {
+func (o *Option) GetValInterface() interface{} {
 	return o.Value
 }
-
-
