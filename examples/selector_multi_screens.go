@@ -23,7 +23,6 @@ func processScreen(screen *grill.Selector) (*grill.Option, error) {
 	// clear screen selections so we can reuse it
 	screen.ClearSelectedOption()
 
-
 	// Render the menu
 	err := screen.Render()
 	if err != nil {
